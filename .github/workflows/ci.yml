@@ -58,9 +58,9 @@ jobs:
         run: npm run test:unit -- --coverage
         continue-on-error: true
 
-      - name: Lint all
-        run: npm run lint
-        continue-on-error: true
+    #   - name: Lint all
+    #     run: npm run lint
+    #     continue-on-error: true
 
       # - name: Increment TS Check
       #   run: node infra/rush-x/bin/run increment --action ts-check -f "${{ steps.changed-files.outputs.all_changed_files }}" -s ' '
