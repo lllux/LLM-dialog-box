@@ -44,13 +44,13 @@ jobs:
             ${{ runner.os }}-rush-store
 
       - name: Install Dependencies
-        run: node common/scripts/install-run-rush.js install
+        run: npm install
 
       - name: Build all
-        run: node common/scripts/install-run-rush.js build --verbose
+        run: npm run build
 
       - name: Test:cov all
-        run: node common/scripts/install-run-rush.js test:cov --verbose
+        run: npm run test:unit -- --coverage
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -60,4 +60,4 @@ jobs:
           verbose: true
 
       - name: Lint all
-        run: node common/scripts/install-run-rush.js lint --verbose
+        run: npm run lint
