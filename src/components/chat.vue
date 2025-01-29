@@ -37,15 +37,15 @@ import axios from 'axios'
 import { CozeAPI, COZE_CN_BASE_URL, ChatStatus, RoleType } from '@coze/api';
 
 // 使用个人访问令牌初始化客户端
-const client = new CozeAPI({
-    token: 'your_pat_token', // 从 https://www.coze.cn/open/oauth/pats 获取你的 PAT
-    // 或者
-    // token: async () => {
-    //   // 如果令牌过期则刷新
-    //   return 'your_oauth_token';
-    // },
-    baseURL: COZE_CN_BASE_URL,
-});
+// const client = new CozeAPI({
+//     token: 'your_pat_token', // 从 https://www.coze.cn/open/oauth/pats 获取你的 PAT
+//     // 或者
+//     // token: async () => {
+//     //   // 如果令牌过期则刷新
+//     //   return 'your_oauth_token';
+//     // },
+//     baseURL: COZE_CN_BASE_URL,
+// });
 
 // 简单对话示例
 // async function quickChat() {
