@@ -37,12 +37,42 @@ const BOT_ID = "7465630144141950985";
 
 const sendMessageToCoze = async (message:string) => {
     try {
-        const response = await axios.post("/api/coze/chat", {
-            message,
-            botId: "7465630144141950985"
+        // const response = await axios.post("/api/coze/chat", {
+        //     message,
+        //     botId: "7465630144141950985"
+        // }, { responseType: 'stream' });
+        const response = await fetch("/api/coze/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message,
+                botId: "7465630144141950985"
+            })
         });
-        console.log("AI返回:", response.data); 
-        return response.data;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let done = false;
+        let result = '';
+        const aiMessage = { role: "ai", content: '' };
+        while (!done) {
+            const { value, done: doneReading } = await reader.read();
+            done = doneReading;
+            result += decoder.decode(value, { stream: true });
+
+            aiMessage.content = result;
+            if (messages.value[messages.value.length - 1].role === 'ai') {
+                messages.value = [...messages.value.slice(0, -1), aiMessage];
+            } else {
+                messages.value.push(aiMessage);
+            }
+        }
+
+        return result; 
+        
+        // console.log("AI返回:", response.data); 
+        // return response.data;
     } catch (error) {
         console.error("Error calling Coze API:", error);
         return null;
@@ -60,17 +90,13 @@ const sendQuestion = async () => {
     loading.value = true;
 
     try {
-        const response = await sendMessageToCoze(question.value);
-        if (response) {
-            messages.value.push({ role: "ai", content: response.messages[0].content });
-        } else {
-            messages.value.push({ role: "ai", content: "AI 没有返回结果，请稍后再试。" });
-        }
+        await sendMessageToCoze(question.value);  
+
+        loading.value = false;
+        question.value = '';  
     } catch (error) {
         messages.value.push({ role: "ai", content: "请求出错，请检查 API Key 或网络连接。" });
-    } finally {
         loading.value = false;
-        question.value = "";
     }
 }
 </script>

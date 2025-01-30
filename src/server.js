@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import { CozeAPI, COZE_CN_BASE_URL, ChatStatus, RoleType } from '@coze/api';
+import { CozeAPI, COZE_CN_BASE_URL, ChatEventType,ChatStatus, RoleType } from '@coze/api';
 import cors from 'cors';
 
 const app = express();
@@ -20,7 +20,7 @@ const cozeClient = new CozeAPI({
 app.post('/api/coze/chat', async (req, res) => {
   const { message, botId } = req.body;
   try {
-    const result = await cozeClient.chat.createAndPoll({
+    const stream = await cozeClient.chat.stream({
       bot_id: botId,
       additional_messages: [
         {
@@ -30,13 +30,29 @@ app.post('/api/coze/chat', async (req, res) => {
         },
       ],
     });
-    if (result.chat.status === ChatStatus.COMPLETED) {
-         for (const item of result.messages) {
-             console.log('[%s]:[%s]:%s', item.role, item.type, item.content);
-         }
+
+    let fullResponse = '';
+
+    for await (const part of stream) {
+      if (part.event === ChatEventType.CONVERSATION_MESSAGE_DELTA) {
+        const content = part.data.content;
+        console.log('[Bot]:', content);  
+
+        fullResponse += content;
+        res.write(content);  
+      }
     }
-    console.log('usage', result.chat.usage);
-    res.json(result);
+    res.end();  
+
+    console.log('Complete response:', fullResponse);
+
+    // if (result.chat.status === ChatStatus.COMPLETED) {
+    //      for (const item of result.messages) {
+    //          console.log('[%s]:[%s]:%s', item.role, item.type, item.content);
+    //      }
+    // }
+    // console.log('usage', result.chat.usage);
+    // res.json(result);
   } catch (error) {
     console.error("server.js:Error calling Coze API:", error);  
     res.status(500).json({ error: error.message });
