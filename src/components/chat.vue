@@ -8,7 +8,7 @@
                 <div v-if="message.role === 'ai'" class="ai-message">
                     <img src="../assets/images/coze.png"
                         alt="AI" class="side" />
-                    <div class="bubble">{{ message.content }}</div>
+                    <div class="bubble">{{ message.content }}<copybox :message="message.content"/></div>
                 </div>
                 <div v-if="message.role === 'user'" class="user-message">
                     <div class="bubble">{{ message.content }}</div>
@@ -32,6 +32,7 @@
 <script lang="ts" setup name="chat">
 import { ref, reactive, watch, nextTick } from 'vue'
 import axios from 'axios'
+import copybox from './copybox.vue'
 
 const BOT_ID = "7465630144141950985";
 
