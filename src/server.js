@@ -7,8 +7,8 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// const API_KEY = "pat_k0vWWCKQTgIANYGL7JKWjsdgeKt6ocOsJjcie7d8LF7jb0oeOt0eIi42npaKepcE";
-// const COZE_API_URL = "https://api.coze.cn/v3/chat";
+ //const API_KEY = "pat_k0vWWCKQTgIANYGL7JKWjsdgeKt6ocOsJjcie7d8LF7jb0oeOt0eIi42npaKepcE";
+ //const COZE_API_URL = "https://api.coze.cn/v3/chat";
 
 const cozeClient = new CozeAPI({
   token: "pat_kStXyB189qqhDKxfD89fxIA0SFJzqoUQ8C2m55WzCGsna1NiUJc7YO8zPRvw308R",
@@ -46,13 +46,13 @@ app.post('/api/coze/chat', async (req, res) => {
 
     console.log('Complete response:', fullResponse);
 
-    // if (result.chat.status === ChatStatus.COMPLETED) {
-    //      for (const item of result.messages) {
-    //          console.log('[%s]:[%s]:%s', item.role, item.type, item.content);
-    //      }
-    // }
-    // console.log('usage', result.chat.usage);
-    // res.json(result);
+     //if (result.chat.status === ChatStatus.COMPLETED) {
+     //     for (const item of result.messages) {
+     //         console.log('[%s]:[%s]:%s', item.role, item.type, item.content);
+     //     }
+     //}
+     //console.log('usage', result.chat.usage);
+     //res.json(result);
   } catch (error) {
     console.error("server.js:Error calling Coze API:", error);  
     res.status(500).json({ error: error.message });
