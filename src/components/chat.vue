@@ -58,14 +58,15 @@
       <!-- 右侧聊天窗口 -->
       <div class="chat-window" ref="chatWindow">
         <div class="chat-body">
-          <div v-for="(message, index) in messages" :key="index" class="message">
-            <div v-if="message.role === 'ai'" class="ai-message">
-              <img src="../assets/images/coze.png" alt="AI" class="side" />
-              <div class="bubble">{{ message.content }}</div>
-            </div>
-            <div v-if="message.role === 'user'" class="user-message">
-              <div class="bubble">{{ message.content }}</div>
-            </div>
+            <div v-for="(message, index) in messages" :key="index" class="message">
+                <div v-if="message.role === 'ai'" class="ai-message">
+                    <img src="../assets/images/coze.png"
+                        alt="AI" class="side" />
+                    <div class="bubble">{{ message.content }}<copybox :message="message.content"/></div>
+                </div>
+                <div v-if="message.role === 'user'" class="user-message">
+                    <div class="bubble">{{ message.content }}</div>
+                </div>
           </div>
         </div>
   
@@ -96,7 +97,11 @@
   
 
 <script lang="ts" setup name="chat">
-import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
+
+import { ref, reactive, watch, nextTick,onMounted, onUnmounted } from 'vue'
+import axios from 'axios'
+import copybox from './copybox.vue'
+
 
 const BOT_ID = "7465630144141950985";
 
