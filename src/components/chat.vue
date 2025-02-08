@@ -448,7 +448,7 @@ loadChatList(); //页面加载时，获取所有聊天
 /* 侧边栏可见状态 */
 .chat-sidebar.visible {
   left: 0; /* 展开时移动到可见位置 */
-  overflow: visible;
+  overflow: auto;
 }
 
 /* 聊天列表样式 */
