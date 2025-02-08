@@ -43,16 +43,19 @@
               </el-button>
             </template>
 
-            <!-- 菜单按钮 -->
-            <button @click="toggleMenu(chat.id)" class="menu-btn">···</button>
-
-            <!-- 下拉菜单 -->
-            <div v-if="chat.id === activeMenuId" class="menu-dropdown">
-              <button @click="renameChat(chat.id)">重命名</button>
-              <button @click="deleteChat(chat.id)" style="color: red">
-                删除
-              </button>
-            </div>
+            <el-dropdown placement="top-start" trigger="click">
+              <el-button size="small" class="menu-btn">···</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="renameChat(chat.id)"
+                    >重命名</el-dropdown-item
+                  >
+                  <el-dropdown-item @click="deleteChat(chat.id)"
+                    >删除</el-dropdown-item
+                  >
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </li>
       </ul>
@@ -64,9 +67,7 @@
         <div v-for="(message, index) in messages" :key="index" class="message">
           <div v-if="message.role === 'ai'" class="ai-message">
             <img src="../assets/images/coze.png" alt="AI" class="side" />
-            <div class="bubble">
-              {{ message.content }}<copybox :message="message.content" />
-            </div>
+            <div class="bubble">{{ message.content }}<copybox :message="message.content" /></div>
           </div>
           <div v-if="message.role === 'user'" class="user-message">
             <div class="bubble">{{ message.content }}</div>
@@ -91,7 +92,7 @@
           :disabled="!question.trim() || loading"
           class="send-button"
         >
-          Send
+          发送
         </el-button>
       </div>
       <div class="tips">内容由 AI 生成，请仔细甄别</div>
@@ -122,11 +123,6 @@ const scrollToBottom = () => {
       chatWindow.value.scrollTop = chatWindow.value.scrollHeight;
     }
   });
-};
-
-// 切换菜单显示与隐藏
-const toggleMenu = (id: string) => {
-  activeMenuId.value = activeMenuId.value === id ? "" : id;
 };
 
 // 点击空白处关闭菜单
@@ -484,36 +480,9 @@ loadChatList(); //页面加载时，获取所有聊天
 
 /* 菜单按钮 */
 .menu-btn {
-  background: none;
-  border: none;
-  font-size: 18px;
+  margin-left: 8px;
   cursor: pointer;
-}
-
-/* 下拉菜单 */
-.menu-dropdown {
-  position: absolute;
-  right: -85px; /* 菜单右侧 */
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 999;
-  width: 120px;
-}
-
-.menu-dropdown button {
-  width: 100%;
-  padding: 10px;
-  text-align: left;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.menu-dropdown button:hover {
-  background-color: #f0f0f0;
+  font-size: larger;
 }
 
 .edit-input {
