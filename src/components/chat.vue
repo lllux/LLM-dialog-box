@@ -36,14 +36,14 @@
                                     </div>
                                 </div>
                                 <div class="item-actions">
-                                    <i class="iconfont icon-dian"
+                                    <i class="iconfont icon-dian" data-testid="menu-button"
                                         :class="{ 'show1': hoverItem === item.sid, 'show2': currentSid === item.sid }"
                                         @click.stop="toggleMenu(item.sid)"></i>
                                 </div>
                                 <teleport to="body">
                                     <div v-if="activeMenuId === item.sid" class="action-menu" v-on-click-outside="closeMenu"
                                         :style="getMenuPosition(item.sid)">
-                                        <div @click.stop="startRename(item)" class="newname">
+                                        <div @click.stop="startRename(item)" class="newname" data-testid="rename-button">
                                             <i class="iconfont icon-zhongmingming"></i>重命名
                                         </div>
                                         <div @click.stop="showDeleteModal(item.sid)" class="delete">
