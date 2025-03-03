@@ -22,10 +22,6 @@ const refreshToken = async () => {
 };
 
 const initCozeChat = () => {
-  if (typeof CozeWebSDK === 'undefined') {
-    console.error('CozeWebSDK is not loaded');
-    return;
-  }
 
   new CozeWebSDK.WebChatClient({
     config: {

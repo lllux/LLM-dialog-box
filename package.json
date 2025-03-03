@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@coze/api": "^1.0.17",
+    "@testing-library/vue": "^8.1.0",
     "@vueuse/components": "^12.7.0",
     "axios": "^1.7.9",
     "cors": "^2.8.5",

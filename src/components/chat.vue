@@ -1,8 +1,5 @@
 <template>
     <div class="chat-container">
-        <!-- <div class="iconbg iconreturn">
-        <i class="iconfont icon-fanhui" @click="$emit('close')"></i>
-      </div> -->
 
         <div class="iconbg iconside">
             <i class="iconfont icon-a-icon1beifen" @click="toggleSidebar"></i>
@@ -25,7 +22,7 @@
                         <ul style="list-style: none;" class="timeblock">
                             <li class="history-item" v-for="item in history.item" @mouseenter="hoverItem = item.sid"
                                 @mouseleave="hoverItem = null" @click="loadHistory(item)"
-                                :class="{ 'active': currentSid === item.sid }" :data-sid="item.sid">
+                                :class="{ 'active': currentSid === item.sid }" :data-sid="item.sid" data-testid="history-item">
                                 <div class="title-container">
                                     <input v-if="editingId === item.sid" v-model="editTitle" ref="titleInput"
                                         @keyup.enter="saveRename(item)" @blur="saveRename(item)" @keyup.esc="cancelRename"
@@ -42,11 +39,11 @@
                                 </div>
                                 <teleport to="body">
                                     <div v-if="activeMenuId === item.sid" class="action-menu" v-on-click-outside="closeMenu"
-                                        :style="getMenuPosition(item.sid)">
+                                        :style="getMenuPosition(item.sid)" data-testid="action-menu">
                                         <div @click.stop="startRename(item)" class="newname" data-testid="rename-button">
                                             <i class="iconfont icon-zhongmingming"></i>重命名
                                         </div>
-                                        <div @click.stop="showDeleteModal(item.sid)" class="delete">
+                                        <div @click.stop="showDeleteModal(item.sid)" class="delete" data-testid="delete-button">
                                             <i class="iconfont icon-shanchu"></i>删除
                                         </div>
                                     </div>
@@ -62,7 +59,7 @@
                                         <p>确定要删除此对话记录吗？</p>
                                     </div>
                                     <div class="modal-actions">
-                                        <button @click="confirmDelete">确认删除</button>
+                                        <button @click="confirmDelete" data-testid="confirm-delete">确认删除</button>
                                         <button @click="showDelete = false">取消</button>
                                     </div>
                                 </div>
@@ -93,12 +90,6 @@
                         <i class="iconfont icon-ds-iconf-pload-status icon-send" @click="sendQuestion"></i>
                     </div>
                 </div>
-                <!-- <div class="recommendations">
-                    <div v-for="(topic, index) in recommendations" :key="index" class="topic"
-                        @click="question = topic; sendQuestion();">
-                        {{ topic }}
-                    </div>
-                </div> -->
                 <div class="tips">内容由 AI 生成，请仔细甄别</div>
             </div>
 
@@ -202,7 +193,7 @@ const md = new MarkdownIt({
     highlight: (code, lang) => {
         const language = hljs.getLanguage(lang) ? lang : 'plaintext';
         const highlighted = hljs.highlight(code, { language }).value;
-        return `<pre data-language="${language}" data-code="${encodeURIComponent(code)}"><code class="${"language-" + language}">${highlighted}</code></pre>`;
+        return `<pre data-testid="code-block" data-language="${language}" data-code="${encodeURIComponent(code)}"><code class="${"language-" + language}">${highlighted}</code></pre>`;
     }
 });
 
@@ -237,6 +228,7 @@ const renderMarkdown = (content) => {
         const copyBtn = document.createElement('a');
         copyBtn.className = 'copy-btn';
         copyBtn.innerHTML = '复制';
+        copyBtn.setAttribute("testid", "copy-button")
 
         toolbar.appendChild(langSpan);
         toolbar.appendChild(copyBtn);
@@ -282,14 +274,6 @@ let socket = null;
 let userId = 443;
 let currentSid = ref('');
 
-
-// const recommendations = ref([
-//     "test",
-//     "test",
-//     "test",
-//     "test",
-//     "test"
-// ])
 const sendMessageToAi = (message) => {
     return new Promise((resolve, reject) => {
         const sid = currentSid.value ? currentSid.value : uuidv4()
@@ -444,7 +428,6 @@ const loadHistory = (history) => {
     currentSid.value = history.sid
     currentTitle.value = history.title
     scrollToBottom()
-    // showSidebar.value = false
 }
 const filteredHistoryList = computed(() => {
   if (!searchKeyword.value) return chatHistoryList.value

@@ -9,7 +9,7 @@
 <script setup>
 import chat from "./components/chat.vue";
 import hang from "./components/hang.vue";
-import { RouterLink, RouterView } from 'vue-router'
+// import { RouterLink, RouterView } from 'vue-router'
 </script>
 
 

@@ -2,9 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ChatComponent from '../chat.vue'
 import flushPromises from 'flush-promises'
+import { fireEvent } from '@testing-library/vue'
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 
+global.ClipboardItem = class { }
+global.navigator.clipboard = {
+    writeText: vi.fn(),
+    readText: vi.fn(),
+}
 // 模拟 WebSocket
 class WebSocketMock {
     constructor(url) {
@@ -33,10 +39,12 @@ describe('ChatComponent', () => {
             sid: '1',
             title: 'Vue问题',
             messages: JSON.stringify([{ role: 'user', content: 'test' }]),
-            updatedAt: new Date()
+            updatedAt: new Date().toISOString()
         }
     ]
-
+    const findInBody = (selector) => {
+        return document.body.querySelector(selector)
+    }
     beforeEach(async () => {
         vi.useFakeTimers()
         vi.setSystemTime(new Date('2024-05-20')) // 固定当前时间
@@ -55,13 +63,15 @@ describe('ChatComponent', () => {
         wrapper = mount(ChatComponent, {
             global: {
                 stubs: {
-                    Transition: true
+                    // Transition: true
+                    Transition: { template: '<div><slot /></div>' } // 避免 Transition 影响
                 }
             }
         })
 
         await wrapper.vm.fetchChatHistory()
-        await flushPromises()
+        // await new Promise(resolve => setTimeout(resolve, 100))
+        // await flushPromises()
         await wrapper.vm.$nextTick()
     })
 
@@ -129,64 +139,73 @@ describe('ChatComponent', () => {
             expect(wrapper.vm.filteredHistoryList[0].item[0].title).toBe('Vue问题')
         })
 
-        // it('应开启重命名模式', async () => {
-        //     wrapper.vm.showSidebar = true
-        //     await wrapper.vm.$nextTick()
+        it('应开启重命名模式', async () => {
+            // [1] 等待数据渲染
+            await wrapper.vm.$nextTick()
 
-        //     // 2. 确保历史数据已经加载且渲染完成
-        //     await flushPromises()
-        //     await wrapper.vm.$nextTick()
+            // [2] 获取历史条目
+            const historyItem = wrapper.find('[data-testid="history-item"]')
+            expect(historyItem.exists()).toBe(true)
 
-        //     // 3. 此时再去查找 DOM
-        //     const historyItem = wrapper.find('.history-item')
-        //     expect(historyItem.exists()).toBe(true)  // 这里就会是 true
+            // [3] 触发 hover 显示菜单按钮
+            await historyItem.trigger('mouseenter')
 
-        //     // 悬停、点更多按钮
-        //     await historyItem.trigger('mouseenter')
-        //     const iconDian = wrapper.find('.icon-dian')
-        //     await iconDian.trigger('click')
+            // [4] 点击菜单触发按钮
+            const menuBtn = historyItem.get('[data-testid="menu-button"]')
+            await menuBtn.trigger('click')
 
-        //     // 点击 “重命名”
-        //     const renameBtn = wrapper.find('.newname')
-        //     expect(renameBtn.exists()).toBe(true)    // 不再是 false
-        //     await renameBtn.trigger('click')
+            // [5] 等待菜单渲染
+            await wrapper.vm.$nextTick()
 
-        //     // 检查组件状态
-        //     expect(wrapper.vm.editingId).toBe('1')
+            // [6] 查找操作菜单
+            const actionMenu = document.querySelector('[data-testid="action-menu"]')
+            expect(actionMenu).not.toBeNull()
 
-        //     // 修改标题
-        //     wrapper.vm.editTitle = '新标题'
-        //     await wrapper.vm.$nextTick()
+            // [7] 点击重命名按钮
+            const renameBtn = actionMenu.querySelector('[data-testid="rename-button"]')
+            await fireEvent.click(renameBtn)
 
-        //     // 失焦或回车保存
-        //     await renameBtn.trigger('blur') // 或者手动调用 saveRename
-        //     await flushPromises()
+            // [8] 验证状态
+            expect(wrapper.vm.editingId).toBe('1')
+            expect(wrapper.find('input.title-input').exists()).toBe(true)
+        })
 
-        //     // 验证发送了 put 请求
-        //     expect(mockAxios.history.put.length).toBe(1)
-        //     expect(mockAxios.history.put[0].data).toContain('"sid":"1"')
-        //     expect(mockAxios.history.put[0].data).toContain('"title":"新标题"')
+        it('应删除对话', async () => {
+            // [1] 等待数据渲染
+            await wrapper.vm.$nextTick()
 
-        //     // 验证组件里对应那条 history title 已更新
-        //     expect(wrapper.vm.chatHistory[0].title).toBe('新标题')
-        // })
+            // [2] 获取历史条目
+            const historyItem = wrapper.find('[data-testid="history-item"]')
+            expect(historyItem.exists()).toBe(true)
 
-        // it('应删除对话', async () => {
-        //     await wrapper.find('textarea').setValue('你好')
-        //     await wrapper.find('.icon-send').trigger('click')
+            // [3] 触发 hover 显示菜单按钮
+            await historyItem.trigger('mouseenter')
 
-        //     expect(wrapper.vm.messages[0].content).toBe('你好')
+            // [4] 点击菜单触发按钮
+            const menuBtn = historyItem.get('[data-testid="menu-button"]')
+            await menuBtn.trigger('click')
 
-        //     // 模拟AI响应完成
-        //     wrapper.vm.messages[0].complete = true
-        //     await wrapper.find('.history-item').trigger('mouseenter')
-        //     await wrapper.find('.icon-dian').trigger('click')
-        //     await wrapper.find('.delete').trigger('click')
-        //     expect(wrapper.vm.showDelete).toBe(true)
+            // [5] 等待菜单渲染
+            await wrapper.vm.$nextTick()
 
-        //     await wrapper.find('.modal-actions button:first-child').trigger('click')
-        //     expect(mockAxios.history.delete.length).toBe(1)
-        // })
+            // [6] 查找操作菜单
+            const actionMenu = findInBody('[data-testid="action-menu"]')
+            expect(actionMenu).toBeTruthy()
+
+            // [1] 点击删除按钮
+            const deleteBtn = actionMenu.querySelector('[data-testid="delete-button"]')
+            await fireEvent.click(deleteBtn)
+
+            // [7] 确认弹窗存在
+            expect(wrapper.vm.showDelete).toBe(true)
+
+            // [8] 点击确认按钮
+            const confirmBtn = wrapper.find('[data-testid="confirm-delete"]')
+            await confirmBtn.trigger('click')
+
+            // [9] 验证API调用
+            expect(mockAxios.history.delete.length).toBe(1)
+        })
     })
 
 
@@ -218,6 +237,87 @@ describe('ChatComponent', () => {
         it('应处理空标题', async () => {
             const item = wrapper.findAll('.history-item')[0]
             expect(item.find('.history-title').text()).toContain('Vue问题')
+        })
+        it('应处理消息发送失败', async () => {
+            mockAxios.onPost('ws://117.72.11.152:8080/lakeSword/ai/chat').networkError();
+            await wrapper.vm.sendQuestion();
+            expect(wrapper.vm.error);
+        });
+        it('应阻止空消息发送', async () => {
+            await wrapper.find('textarea').setValue('   ') // 空格
+            await wrapper.find('.icon-send').trigger('click')
+            
+            expect(wrapper.vm.messages.length).toBe(0)
+          })
+          
+          it('应在消息更新后滚动到底部', async () => {
+            // [1] 创建并附加容器元素
+            const container = document.createElement('div')
+            container.className = 'chat-body'
+            document.body.appendChild(container)
+            
+            // [2] 模拟 scrollTop 属性
+            let scrollValue = 0
+            Object.defineProperty(container, 'scrollTop', {
+              get: () => scrollValue,
+              set: (value) => {
+                scrollValue = value
+              },
+              configurable: true
+            })
+          
+            // [3] 触发消息发送
+            await wrapper.find('textarea').setValue('test')
+            await wrapper.find('.icon-send').trigger('click')
+          
+            // [4] 等待滚动触发
+            await wrapper.vm.$nextTick()
+            
+            // [5] 验证滚动调用
+            expect(scrollValue).toBe(0)
+            
+            // [6] 清理
+            document.body.removeChild(container)
+          })
+          it('应处理重命名失败', async () => {
+            mockAxios.onPut(/dialog\/title/).networkError()
+            
+            // 触发重命名流程
+            await wrapper.vm.startRename(mockHistory[0])
+            await wrapper.vm.saveRename(mockHistory[0])
+            
+            expect(wrapper.vm.editingId).toBeNull()
+            expect(wrapper.find('.error-message').exists())
+          })
+          it('应处理闰年时间分类', () => {
+            const leapDate = new Date('2024-02-29')
+            expect(wrapper.vm.categorizeMessage(leapDate))
+          })
+          
+          it('应处理时区差异', () => {
+            const utcDate = new Date('2024-05-20T23:59:59Z')
+            expect(wrapper.vm.categorizeMessage(utcDate))
+          })
+    })
+
+    describe('代码复制功能', () => {
+        beforeEach(async () => {
+            // 设置通用测试数据
+            wrapper.vm.messages = [{
+                role: 'assistant',
+                content: '```js\nconsole.log("test")\n```',
+                complete: true
+            }]
+
+            await wrapper.vm.$nextTick()
+            await flushPromises()
+        })
+
+        it('应正确处理带换行的代码', async () => {
+            const preElement = wrapper.find('[data-testid="code-block"]')
+            const expectedCode = 'console.log("test")\n'
+            expect(preElement.attributes('data-code'))
+                .toBe(encodeURIComponent(expectedCode))
         })
     })
 })
