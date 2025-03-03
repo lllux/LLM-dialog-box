@@ -20,14 +20,14 @@
                     </div>
                 </div>
                 <div class="history-list">
-                    <div v-for=" history in chatHistoryList">
+                    <div v-for=" history in filteredHistoryList">
                         <div class="timetitle" v-if="history.item != ''">{{ history.title }}</div>
                         <ul style="list-style: none;" class="timeblock">
                             <li class="history-item" v-for="item in history.item" @mouseenter="hoverItem = item.sid"
                                 @mouseleave="hoverItem = null" @click="loadHistory(item)"
                                 :class="{ 'active': currentSid === item.sid }" :data-sid="item.sid">
                                 <div class="title-container">
-                                    <input v-if="editingId === history.sid" v-model="editTitle" ref="titleInput"
+                                    <input v-if="editingId === item.sid" v-model="editTitle" ref="titleInput"
                                         @keyup.enter="saveRename(item)" @blur="saveRename(item)" @keyup.esc="cancelRename"
                                         class="title-input" />
                                     <div v-else class="history-title">
@@ -69,7 +69,10 @@
                             </div>
                         </ul>
                     </div>
-
+                </div>
+                <div class="history-search">
+                    <input type="text" v-model="searchKeyword" placeholder="搜索历史记录">
+                    <div class="iconfont icon-Magnifier"></div>
                 </div>
 
             </div>
@@ -149,7 +152,7 @@
 </template>
 
 <script setup name="chat">
-import { ref, reactive, watch, nextTick,onMounted } from 'vue'
+import { ref, reactive, watch, nextTick,onMounted,computed} from 'vue'
 import axios from 'axios'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
@@ -163,13 +166,43 @@ import { vOnClickOutside } from '@vueuse/components'
 
 onMounted(() => {
     fetchChatHistory()
+
+    document.body.addEventListener('click', async (e) => {
+    const copyBtn = e.target.closest('.copy-btn')
+    if (copyBtn) {
+      const pre = e.target.closest('pre[data-code]')
+      const code = decodeURIComponent(pre.dataset.code)
+      const originalText = copyBtn.innerText
+      try {
+        copyBtn.disabled = true
+        await navigator.clipboard.writeText(code)
+        console.log("已复制test")
+        copyBtn.innerText = '√ 已复制'
+
+      setTimeout(() => {
+        copyBtn.innerText = originalText
+        copyBtn.disabled = false
+      }, 3000)
+
+      } catch (err) {
+        console.error('复制失败:', err)
+        const textarea = document.createElement('textarea')
+        textarea.value = code
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+      }
+    }
+  })
 });
 const md = new MarkdownIt({
     html: true,
     breaks: true,
     highlight: (code, lang) => {
         const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-        return hljs.highlight(code, { language }).value;
+        const highlighted = hljs.highlight(code, { language }).value;
+        return `<pre data-language="${language}" data-code="${encodeURIComponent(code)}"><code class="${"language-" + language}">${highlighted}</code></pre>`;
     }
 });
 
@@ -183,24 +216,48 @@ const renderMarkdown = (content) => {
         .replace(/`+$/, '');
 
     // 渲染并二次过滤
-    const html = md.render(cleaned)
+    let html = md.render(cleaned)
         .replace(/<pre><code><\/code><\/pre>/g, '');
 
+    // 复制功能
+    const container = document.createElement('div');
+    container.innerHTML = html;
 
-    const codeWithCopyButton = html.replace(/<pre><code class="language-(\w+)">/g, (match, lang) => {
-        return `
-            <div class="code-container">
-                <div class="header">
-                    <div class="type">${lang}</div>
-                    <div class="copy">复制</div>
-                </div>
-                <pre><code class="language-${lang}">${match}</code></pre>
-            </div>
-        `;
+    container.querySelectorAll('pre[data-language]').forEach(pre => {
+        const language = pre.dataset.language;
+        const rawCode = decodeURIComponent(pre.dataset.code);
+
+        const toolbar = document.createElement('div');
+        toolbar.className = 'code-toolbar';
+
+        const langSpan = document.createElement('span');
+        langSpan.className = 'language-tag';
+        langSpan.textContent = language;
+
+        const copyBtn = document.createElement('a');
+        copyBtn.className = 'copy-btn';
+        copyBtn.innerHTML = '复制';
+
+        toolbar.appendChild(langSpan);
+        toolbar.appendChild(copyBtn);
+        pre.insertBefore(toolbar, pre.firstChild);
     });
 
-    return DOMPurify.sanitize(html);
-    // return DOMPurify.sanitize(md.render(preprocessed))
+    html = container.innerHTML;
+    
+    const separator = '以上为思考过程';
+    const separatorIndex = html.indexOf(separator);
+
+    if (separatorIndex !== -1) {
+        const thinkingHtml = html.substring(0, separatorIndex);
+        const answerHtml = html.substring(separatorIndex + separator.length);
+        return `
+            <div class="thinking-process">${thinkingHtml}</div>
+            <div class="answer-content">${answerHtml}</div>
+        `;
+    }
+    return `<div class="thinking-process">${html}</div>`;
+    // return DOMPurify.sanitize(html);
 
 };
 
@@ -208,6 +265,7 @@ const showSidebar = ref(true)
 const chatHistory = ref([])
 const chatHistoryList = ref([])
 const loadingHistory = ref(false)
+const searchKeyword = ref('')
 
 const todayHistory = ref([]),
     yesterdayHistory = ref([]),
@@ -317,6 +375,7 @@ const sendQuestion = async () => {
 const stopQuestion = async () => {
     const lastMessage = messages.value[messages.value.length - 1]
     lastMessage.complete = true
+    loading.value=false
     const response = await axios.get("http://117.72.11.152:8080/lakeSword/ai/chat/stop", {
         params: { sid: currentSid.value }
     })
@@ -387,7 +446,18 @@ const loadHistory = (history) => {
     scrollToBottom()
     // showSidebar.value = false
 }
-
+const filteredHistoryList = computed(() => {
+  if (!searchKeyword.value) return chatHistoryList.value
+  
+  const keyword = searchKeyword.value.toLowerCase()
+  return chatHistoryList.value.map(group => ({
+    ...group,
+    item: group.item.filter(item => {
+      const title = item.title?.toLowerCase() || '未命名对话'
+      return title.includes(keyword)
+    })
+  })).filter(group => group.item.length > 0)
+})
 const newchat = () => {
     messages.value = []
     currentTitle.value = ""
@@ -504,7 +574,7 @@ const confirmDelete = async () => {
 const autoResize = (e) => {
     const textarea = e.target
     textarea.style.height = 'auto'
-    const newHeight = Math.min(textarea.scrollHeight, 120)
+    const newHeight = Math.min(textarea.scrollHeight, 170)
     textarea.style.height = `${newHeight}px`
 }
 </script>
@@ -586,7 +656,7 @@ const autoResize = (e) => {
 
 .history-list {
     width: 250px;
-    height: 80vh;
+    height: 83vh;
     padding-right: 10px;
     overflow-y: auto;
     overflow-x: visible;
@@ -789,7 +859,30 @@ const autoResize = (e) => {
 .modal-actions button:last-child {
     background-color: #f0f0f0;
 }
-
+.history-search{ 
+    position: relative;
+    height: 30px;
+    width: 220px;
+    background-color: #fff;
+    border-radius: 15px;
+    margin: 15px 10px;
+    padding: 0 10px;
+    border:1px solid #e3e3e3;
+}
+.history-search  input{
+    line-height: 28px;
+    width: 90%;
+    border: none;
+    outline: none;
+    color: #333;
+}
+.icon-Magnifier{ 
+    position: absolute;
+    top:0;
+    right: 10px;
+    line-height: 28px;
+    z-index: 1;
+}
 
 
 
@@ -994,9 +1087,32 @@ const autoResize = (e) => {
 
 
 /* 渲染AI生成内容的样式 */
+.markdown-body :deep(.thinking-process) {
+    font-size: 14px;
+    border-left: 2px solid #e5e5e5;
+    padding-left: 13px;
+    margin: 0 0 10px 0;
+    color: #8e8e8e;
+    font-style: italic;
+}
+
 .markdown-body {
     font-size: 16px;
     line-height: 1.5;
+}
+.markdown-body :deep(.code-toolbar){
+    display: flex;
+    justify-content: space-between;
+    font: 12px/1.5 ui-sans-serif, -apple-system, system-ui, Segoe UI, Helvetica, Apple Color Emoji, Arial, sans-serif, Segoe UI Emoji, Segoe UI Symbol;
+    color:#5d5d5d;
+    color:#5d5d5d;
+    margin-bottom: 16px;
+
+}
+.markdown-body :deep(.copy-btn){
+    cursor: pointer;
+    font: 12px/1.5 ui-sans-serif, -apple-system, system-ui, Segoe UI, Helvetica, Apple Color Emoji, Arial, sans-serif, Segoe UI Emoji, Segoe UI Symbol;
+    color:#5d5d5d;
 }
 
 .markdown-body :deep(h1),

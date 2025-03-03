@@ -63,7 +63,7 @@ a {
 
 .over{
   position: absolute;
-  top: 50px;
+  top: 40px;
   right: 0;
   z-index: 2;         
   pointer-events: auto; 

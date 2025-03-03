@@ -39,8 +39,8 @@ const initCozeChat = () => {
     userInfo: {
       id: 'user',
     //   url: 'https://lf-coze-web-cdn.coze.cn/obj/coze-web-cn/obric/coze/favicon.1970.png',
-      url:"http://imgtu.oss-cn-beijing.aliyuncs.com/aitest/2025_02_28/6ccac14a440e4994bfd58439dcaba244.png",
-      nickname: 'UserA',
+      url:"https://res.volccdn.com/obj/volc-console-fe/vconsole-static/cloudidentity.avartar-huoshan.9f69c68a.jpg",
+      nickname: 'User',
     },
     ui: {
       base: {
@@ -52,7 +52,7 @@ const initCozeChat = () => {
       chatBot: {
         title: 'Chat Bot',
         uploadable: true,
-        width: '390px',
+        width: '450px',
         el: chatContainer.value, 
       },
       asstBtn: {
