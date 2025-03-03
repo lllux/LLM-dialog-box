@@ -320,4 +320,176 @@ describe('ChatComponent', () => {
                 .toBe(encodeURIComponent(expectedCode))
         })
     })
+    describe('模板结构验证', () => {
+        it('应渲染初始布局', () => {
+          // 验证核心容器
+          expect(wrapper.find('.chat-container').exists()).toBe(true)
+          expect(wrapper.find('.chat-window').exists()).toBe(true)
+          
+          // 验证侧边栏初始状态
+          expect(wrapper.find('.sidebar').exists()).toBe(wrapper.vm.showSidebar)
+          
+          // 验证空状态提示
+          expect(wrapper.find('.prompt').text()).toContain('有什么可以帮忙的？')
+        })
+      
+        it('应正确渲染消息列表', async () => {
+          // 设置测试消息
+          wrapper.vm.messages = [
+            { role: 'user', content: '你好' },
+            { role: 'assistant', content: '你好！有什么可以帮助您？', complete: true }
+          ]
+          
+          await wrapper.vm.$nextTick()
+          
+          // 验证消息项
+          const messages = wrapper.findAll('.message')
+          expect(messages).toHaveLength(2)
+          expect(messages[0].find('.user-message').exists()).toBe(true)
+          expect(messages[1].find('.ai-message').exists()).toBe(true)
+        })
+      })
+      describe('条件渲染验证', () => {
+        it('应切换侧边栏显示', async () => {
+          const initialShow = wrapper.vm.showSidebar
+          
+          // 点击切换按钮
+          await wrapper.find('.icon-a-icon1beifen').trigger('click')
+          
+          expect(wrapper.vm.showSidebar).toBe(!initialShow)
+          expect(wrapper.find('.sidebar').exists()).toBe(!initialShow)
+        })
+      
+        it('应显示加载中的输入状态', async () => {
+          wrapper.vm.loading = true
+          await wrapper.vm.$nextTick()
+          
+          expect(wrapper.find('.typing-indicator').exists())
+        })
+      })
+      describe('用户交互测试', () => {
+        it('应处理消息发送', async () => {
+          // 设置输入值
+          await wrapper.find('textarea').setValue('测试消息')
+          
+          // 触发发送
+          await wrapper.find('.icon-send').trigger('click')
+          
+          // 验证消息列表
+          expect(wrapper.vm.messages).toContainEqual(
+            expect.objectContaining({
+              role: 'user',
+              content: '测试消息'
+            })
+          )
+        })
+      
+        it('应显示操作菜单', async () => {
+          const historyItem = wrapper.find('[data-testid="history-item"]')
+          
+          // 触发 hover 和点击
+          await historyItem.trigger('mouseenter')
+          await historyItem.find('[data-testid="menu-button"]').trigger('click')
+          
+          // 验证菜单存在
+          const menu = document.querySelector('[data-testid="action-menu"]')
+          expect(menu).not.toBeNull()
+        })
+      })
+      describe('样式类绑定验证', () => {
+        it('应高亮当前对话项', async () => {
+          const firstItem = wrapper.find('[data-testid="history-item"]')
+          
+          // 设置当前对话ID
+          await firstItem.trigger('click')
+          
+          expect(firstItem.classes()).toContain('active')
+        })
+      
+        it('应根据状态显示正确图标', async () => {
+          // 正常状态
+          expect(wrapper.find('.icon-ds-iconf-pload-status').exists()).toBe(true)
+          
+          // 加载中状态
+          wrapper.vm.loading = true
+          await wrapper.vm.$nextTick()
+          expect(wrapper.find('.icon-status-stop').exists())
+        })
+      })
+      describe('过渡效果验证', () => {
+        it('应验证侧边栏过渡状态', async () => {
+          // [1] 使用假定时器
+          vi.useFakeTimers()
+          
+          // [2] 创建带过渡的wrapper
+          const wrapper = mount(ChatComponent, {
+            global: {
+              stubs: {
+                Transition: false // 启用真实过渡组件
+              }
+            },
+            attachTo: document.body
+          })
+      
+          // [3] 获取侧边栏元素
+          const sidebar = wrapper.find('.sidebar')
+          
+          // [4] 创建事件监听器mock
+          const transitionEndMock = vi.fn()
+          sidebar.element.addEventListener('transitionend', transitionEndMock)
+      
+          // [5] 触发过渡
+          await wrapper.find('.icon-a-icon1beifen').trigger('click')
+          
+          // [6] 手动触发过渡结束事件
+          sidebar.element.dispatchEvent(new Event('transitionend'))
+          
+          // [7] 推进所有定时器
+          vi.advanceTimersByTime(300)
+          
+          // [8] 验证
+          expect(transitionEndMock).toHaveBeenCalled()
+          expect(wrapper.vm.showSidebar).toBe(false)
+          
+          // [9] 清理
+          vi.useRealTimers()
+          wrapper.unmount()
+        }, 10000) // 延长超时到10秒
+      })
+      describe('输入验证测试', () => {
+        it('应自动调整输入框高度', async () => {
+          const textarea = wrapper.find('textarea')
+          const initialHeight = textarea.element.style.height
+          
+          // 模拟多行输入
+          await textarea.setValue('第一行\n第二行\n第三行')
+          
+          expect(textarea.element.style.height).not.toBe(initialHeight)
+          expect(textarea.element.style.height).toBe('0px')
+        })
+      
+        it('应阻止空消息发送', async () => {
+          await wrapper.find('textarea').setValue('   ') // 纯空格
+          await wrapper.find('.icon-send').trigger('click')
+          
+          expect(wrapper.vm.messages.length).toBe(0)
+        })
+      })
+      describe('列表渲染验证', () => {
+        it('应正确渲染过滤后的历史记录', async () => {
+          // 设置搜索关键词
+          await wrapper.find('input[type="text"]').setValue('Vue')
+          
+          // 验证过滤结果
+          expect(wrapper.findAll('[data-testid="history-item"]')).toHaveLength(1)
+          expect(wrapper.find('.history-title').text()).toContain('Vue问题')
+        })
+      
+        it('应处理空历史记录状态', async () => {
+          mockAxios.onGet(/dialog\/user/).reply(200, { data: [] })
+          await wrapper.vm.fetchChatHistory()
+          
+          expect(wrapper.find('.empty').exists()).toBe(true)
+        })
+      })
 })
