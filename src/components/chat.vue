@@ -176,7 +176,6 @@ onMounted(() => {
                     copyBtn.innerText = originalText
                     copyBtn.disabled = false
                 }, 3000)
-
             } catch (err) {
                 console.error('复制失败:', err)
                 copyBtn.disabled = true
