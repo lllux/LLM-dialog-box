@@ -97,7 +97,7 @@ jobs:
           target: "/var/www/myproject"
           overwrite: true  # 强制覆盖
           strip_components: 0  # 保留完整目录结构
-          rm: true  # 传输前清理目标目录
+          rm: false  # 传输前清理目标目录
 
       - name: Restart Nginx
         uses: appleboy/ssh-action@master
