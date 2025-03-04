@@ -186,6 +186,7 @@ onMounted(() => {
                 textarea.select()
                 document.execCommand('copy')
                 document.body.removeChild(textarea)
+                console.log("已复制test2")
                 copyBtn.innerText = '√ 已复制'
 
                 setTimeout(() => {
