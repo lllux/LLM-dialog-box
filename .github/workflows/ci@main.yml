@@ -97,14 +97,22 @@ jobs:
           target: "/var/www/myproject"
           overwrite: true  # 强制覆盖
           strip_components: 0  # 保留完整目录结构
-          rm: false  # 传输前清理目标目录
 
-      - name: Restart Nginx
+      - name: Atomic Switch & Permissions
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            # 删除旧版本
+            sudo rm -rf /var/www/myproject/dist
+            # 原子替换
+            sudo mv /var/www/.deploy-cache/dist /var/www/myproject/
+            # 设置权限
+            sudo find /var/www/myproject/dist -type d -exec chmod 755 {} \;
+            sudo find /var/www/myproject/dist -type f -exec chmod 644 {} \;
             sudo chown -R www-data:www-data /var/www/myproject/dist
-            sudo systemctl restart nginx
+            # 清理缓存
+            sudo rm -rf /var/www/.deploy-cache
+            sudo systemctl reload nginx 
