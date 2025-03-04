@@ -22,7 +22,8 @@
                         <ul style="list-style: none;" class="timeblock">
                             <li class="history-item" v-for="item in history.item" @mouseenter="hoverItem = item.sid"
                                 @mouseleave="hoverItem = null" @click="loadHistory(item)"
-                                :class="{ 'active': currentSid === item.sid }" :data-sid="item.sid" data-testid="history-item">
+                                :class="{ 'active': currentSid === item.sid }" :data-sid="item.sid"
+                                data-testid="history-item">
                                 <div class="title-container">
                                     <input v-if="editingId === item.sid" v-model="editTitle" ref="titleInput"
                                         @keyup.enter="saveRename(item)" @blur="saveRename(item)" @keyup.esc="cancelRename"
@@ -43,7 +44,8 @@
                                         <div @click.stop="startRename(item)" class="newname" data-testid="rename-button">
                                             <i class="iconfont icon-zhongmingming"></i>重命名
                                         </div>
-                                        <div @click.stop="showDeleteModal(item.sid)" class="delete" data-testid="delete-button">
+                                        <div @click.stop="showDeleteModal(item.sid)" class="delete"
+                                            data-testid="delete-button">
                                             <i class="iconfont icon-shanchu"></i>删除
                                         </div>
                                     </div>
@@ -143,7 +145,7 @@
 </template>
 
 <script setup name="chat">
-import { ref, reactive, watch, nextTick,onMounted,computed} from 'vue'
+import { ref, reactive, watch, nextTick, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
@@ -159,33 +161,40 @@ onMounted(() => {
     fetchChatHistory()
 
     document.body.addEventListener('click', async (e) => {
-    const copyBtn = e.target.closest('.copy-btn')
-    if (copyBtn) {
-      const pre = e.target.closest('pre[data-code]')
-      const code = decodeURIComponent(pre.dataset.code)
-      const originalText = copyBtn.innerText
-      try {
-        copyBtn.disabled = true
-        await navigator.clipboard.writeText(code)
-        console.log("已复制test")
-        copyBtn.innerText = '√ 已复制'
+        const copyBtn = e.target.closest('.copy-btn')
+        if (copyBtn) {
+            const pre = e.target.closest('pre[data-code]')
+            const code = decodeURIComponent(pre.dataset.code)
+            const originalText = copyBtn.innerText
+            try {
+                copyBtn.disabled = true
+                await navigator.clipboard.writeText(code)
+                console.log("已复制test")
+                copyBtn.innerText = '√ 已复制'
 
-      setTimeout(() => {
-        copyBtn.innerText = originalText
-        copyBtn.disabled = false
-      }, 3000)
+                setTimeout(() => {
+                    copyBtn.innerText = originalText
+                    copyBtn.disabled = false
+                }, 3000)
 
-      } catch (err) {
-        console.error('复制失败:', err)
-        const textarea = document.createElement('textarea')
-        textarea.value = code
-        document.body.appendChild(textarea)
-        textarea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textarea)
-      }
-    }
-  })
+            } catch (err) {
+                console.error('复制失败:', err)
+                copyBtn.disabled = true
+                const textarea = document.createElement('textarea')
+                textarea.value = code
+                document.body.appendChild(textarea)
+                textarea.select()
+                document.execCommand('copy')
+                document.body.removeChild(textarea)
+                copyBtn.innerText = '√ 已复制'
+
+                setTimeout(() => {
+                    copyBtn.innerText = originalText
+                    copyBtn.disabled = false
+                }, 3000)
+            }
+        }
+    })
 });
 const md = new MarkdownIt({
     html: true,
@@ -236,7 +245,7 @@ const renderMarkdown = (content) => {
     });
 
     html = container.innerHTML;
-    
+
     const separator = '以上为思考过程';
     const separatorIndex = html.indexOf(separator);
 
@@ -359,7 +368,7 @@ const sendQuestion = async () => {
 const stopQuestion = async () => {
     const lastMessage = messages.value[messages.value.length - 1]
     lastMessage.complete = true
-    loading.value=false
+    loading.value = false
     const response = await axios.get("http://117.72.11.152:8080/lakeSword/ai/chat/stop", {
         params: { sid: currentSid.value }
     })
@@ -430,16 +439,16 @@ const loadHistory = (history) => {
     scrollToBottom()
 }
 const filteredHistoryList = computed(() => {
-  if (!searchKeyword.value) return chatHistoryList.value
-  
-  const keyword = searchKeyword.value.toLowerCase()
-  return chatHistoryList.value.map(group => ({
-    ...group,
-    item: group.item.filter(item => {
-      const title = item.title?.toLowerCase() || '未命名对话'
-      return title.includes(keyword)
-    })
-  })).filter(group => group.item.length > 0)
+    if (!searchKeyword.value) return chatHistoryList.value
+
+    const keyword = searchKeyword.value.toLowerCase()
+    return chatHistoryList.value.map(group => ({
+        ...group,
+        item: group.item.filter(item => {
+            const title = item.title?.toLowerCase() || '未命名对话'
+            return title.includes(keyword)
+        })
+    })).filter(group => group.item.length > 0)
 })
 const newchat = () => {
     messages.value = []
@@ -564,6 +573,7 @@ const autoResize = (e) => {
 
 <style scoped>
 @import './icons/iconfont.css';
+
 .chat-container {
     position: relative;
     overflow-y: auto;
@@ -842,7 +852,8 @@ const autoResize = (e) => {
 .modal-actions button:last-child {
     background-color: #f0f0f0;
 }
-.history-search{ 
+
+.history-search {
     position: relative;
     height: 30px;
     width: 220px;
@@ -850,18 +861,20 @@ const autoResize = (e) => {
     border-radius: 15px;
     margin: 15px 10px;
     padding: 0 10px;
-    border:1px solid #e3e3e3;
+    border: 1px solid #e3e3e3;
 }
-.history-search  input{
+
+.history-search input {
     line-height: 28px;
     width: 90%;
     border: none;
     outline: none;
     color: #333;
 }
-.icon-Magnifier{ 
+
+.icon-Magnifier {
     position: absolute;
-    top:0;
+    top: 0;
     right: 10px;
     line-height: 28px;
     z-index: 1;
@@ -1002,7 +1015,7 @@ const autoResize = (e) => {
     max-width: 70%;
 }
 
-.icon-airec{
+.icon-airec {
     width: 32px;
     height: 32px;
     font-size: 32px;
@@ -1083,19 +1096,21 @@ const autoResize = (e) => {
     font-size: 16px;
     line-height: 1.5;
 }
-.markdown-body :deep(.code-toolbar){
+
+.markdown-body :deep(.code-toolbar) {
     display: flex;
     justify-content: space-between;
     font: 12px/1.5 ui-sans-serif, -apple-system, system-ui, Segoe UI, Helvetica, Apple Color Emoji, Arial, sans-serif, Segoe UI Emoji, Segoe UI Symbol;
-    color:#5d5d5d;
-    color:#5d5d5d;
+    color: #5d5d5d;
+    color: #5d5d5d;
     margin-bottom: 16px;
 
 }
-.markdown-body :deep(.copy-btn){
+
+.markdown-body :deep(.copy-btn) {
     cursor: pointer;
     font: 12px/1.5 ui-sans-serif, -apple-system, system-ui, Segoe UI, Helvetica, Apple Color Emoji, Arial, sans-serif, Segoe UI Emoji, Segoe UI Symbol;
-    color:#5d5d5d;
+    color: #5d5d5d;
 }
 
 .markdown-body :deep(h1),
@@ -1107,10 +1122,12 @@ const autoResize = (e) => {
     margin: 0.67em 0;
     font-weight: 700;
 }
+
 .markdown-body :deep(ul),
-.markdown-body :deep(ol){
+.markdown-body :deep(ol) {
     padding-left: 26px;
 }
+
 .markdown-body :deep(p) {
     word-break: break-all;
 }
@@ -1176,5 +1193,4 @@ const autoResize = (e) => {
 
 .dot:nth-child(3) {
     animation-delay: 0.4s;
-}
-</style>
+}</style>
