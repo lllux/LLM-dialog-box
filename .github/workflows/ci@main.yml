@@ -49,6 +49,12 @@ jobs:
       - name: Build all
         run: npm run build
 
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
       - name: Test:cov all
         run: npm run test:unit -- --coverage
 
@@ -75,13 +81,19 @@ jobs:
       - name: Install Dependencies
         run: npm ci --production  # 仅安装生产依赖
 
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
       - name: Deploy via SSH
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "dist/"
+          source: "dist/*"
           target: "/var/www/myproject"
 
       - name: Restart Nginx
