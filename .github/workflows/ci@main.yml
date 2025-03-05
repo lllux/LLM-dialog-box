@@ -94,7 +94,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "dist/*"
-          target: "/var/www/myproject"
+          target: "/var/www/.deploy-cache"
           overwrite: true  # 强制覆盖
           strip_components: 0  # 保留完整目录结构
 
