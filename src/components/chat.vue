@@ -527,6 +527,7 @@ const saveRename = async (history) => {
     try {
         await axios.put('http://117.72.11.152:8080/lakeSword/dialog/title', newname)
         history.title = editTitle.value
+        currentTitle.value = history.title
         editingId.value = null
     } catch (error) {
         alert('重命名失败')
@@ -551,7 +552,7 @@ const confirmDelete = async () => {
             })
             console.log(deletingId.value, response.data)
             await fetchChatHistory()
-            if (currentSid === deletingId.value) {
+            if (currentSid.value === deletingId.value) {
                 newchat()
             }
         } catch (error) {
