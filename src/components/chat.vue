@@ -355,7 +355,7 @@ const sendQuestion = async () => {
         await sendMessageToAi(currentQuestion);
         // messages.value[messages.value.length - 1].complete = true;
         console.log("最终:" + messages.value[messages.value.length - 1].complete)
-        if (messages.value.length === 2) fetchChatHistory()
+        fetchChatHistory()
     } catch (error) {
         console.error(error)
     } finally {
