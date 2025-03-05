@@ -363,7 +363,6 @@ const sendQuestion = async () => {
         socket = null;
     }
 }
-// const BOT_ID = "7465630144141950985";
 
 const stopQuestion = async () => {
     const lastMessage = messages.value[messages.value.length - 1]
